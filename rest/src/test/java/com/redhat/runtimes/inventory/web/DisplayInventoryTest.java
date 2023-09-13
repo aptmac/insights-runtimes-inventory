@@ -1,21 +1,20 @@
 /* Copyright (C) Red Hat 2023 */
 package com.redhat.runtimes.inventory.web;
 
-import static com.redhat.runtimes.inventory.models.Constants.X_RH_IDENTITY_HEADER;
+import static com.redhat.runtimes.inventory.events.TestUtils.clearTables;
+import static com.redhat.runtimes.inventory.events.TestUtils.createRHIdentityHeader;
+import static com.redhat.runtimes.inventory.events.TestUtils.encode;
+import static com.redhat.runtimes.inventory.events.TestUtils.encodeRHIdentityInfo;
+import static com.redhat.runtimes.inventory.events.TestUtils.entity_count;
+import static com.redhat.runtimes.inventory.events.TestUtils.getJvmInstanceFromJsonFile;
+import static com.redhat.runtimes.inventory.events.TestUtils.getJvmInstanceFromZipJsonFile;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.redhat.runtimes.inventory.events.ArchiveAnnouncement;
-import com.redhat.runtimes.inventory.events.EventConsumer;
-import com.redhat.runtimes.inventory.events.TestUtils;
-import com.redhat.runtimes.inventory.events.Utils;
-import com.redhat.runtimes.inventory.models.InsightsMessage;
 import com.redhat.runtimes.inventory.models.JvmInstance;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -24,9 +23,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -43,58 +40,7 @@ public class DisplayInventoryTest {
   @AfterEach
   @Transactional
   void tearDown() {
-    TestUtils.clearTables(entityManager);
-  }
-
-  private static Header createRHIdentityHeader(String encodedIdentityHeader) {
-    return new Header(X_RH_IDENTITY_HEADER, encodedIdentityHeader);
-  }
-
-  private static String encode(String value) {
-    return new String(Base64.getEncoder().encode(value.getBytes()));
-  }
-
-  private static String encodeRHIdentityInfo(String accountNumber, String orgId, String username) {
-    ObjectMapper mapper = new ObjectMapper();
-
-    ObjectNode user = mapper.createObjectNode();
-    user.put("username", username);
-
-    ObjectNode identity = mapper.createObjectNode();
-    identity.put("account_number", accountNumber);
-    identity.put("org_id", orgId);
-    identity.set("user", user);
-    identity.put("type", "User");
-
-    ObjectNode head = mapper.createObjectNode();
-    head.set("identity", identity);
-
-    return encode(head.toString());
-  }
-
-  private ArchiveAnnouncement setupArchiveAnnouncement() {
-    ArchiveAnnouncement announcement = new ArchiveAnnouncement();
-    announcement.setAccountId("accountId");
-    announcement.setOrgId("orgId");
-    announcement.setTimestamp(Instant.now());
-    return announcement;
-  }
-
-  private JvmInstance getJvmInstanceFromZipJsonFile(String filename) throws IOException {
-    byte[] buffy = TestUtils.readBytesFromResources(filename);
-    String json = EventConsumer.unzipJson(buffy);
-    InsightsMessage message = Utils.jvmInstanceOf(setupArchiveAnnouncement(), json);
-    assertTrue(message instanceof JvmInstance);
-    JvmInstance instance = (JvmInstance) message;
-    return instance;
-  }
-
-  private JvmInstance getJvmInstanceFromJsonFile(String filename) throws IOException {
-    String json = TestUtils.readFromResources(filename);
-    InsightsMessage message = Utils.jvmInstanceOf(setupArchiveAnnouncement(), json);
-    assertTrue(message instanceof JvmInstance);
-    JvmInstance instance = (JvmInstance) message;
-    return instance;
+    clearTables(entityManager);
   }
 
   @Transactional
@@ -181,7 +127,7 @@ public class DisplayInventoryTest {
     // set the hostname to match the previous instance
     modifiedInstance.setHostname("fedora");
     persistJvmInstanceToDatabase(modifiedInstance);
-    assertEquals(2L, TestUtils.entity_count(entityManager, "JvmInstance"));
+    assertEquals(2L, entity_count(entityManager, "JvmInstance"));
 
     String accountNumber = "accountId";
     String orgId = "orgId";
@@ -318,7 +264,7 @@ public class DisplayInventoryTest {
     // set the hostname to match the previous instance
     modifiedInstance.setHostname("fedora");
     persistJvmInstanceToDatabase(modifiedInstance);
-    assertEquals(2L, TestUtils.entity_count(entityManager, "JvmInstance"));
+    assertEquals(2L, entity_count(entityManager, "JvmInstance"));
     String accountNumber = "accountId";
     String orgId = "orgId";
     String username = "user";
