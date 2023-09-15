@@ -63,7 +63,7 @@ public class DevelopmentRestServiceTest {
         curl -X GET http://127.0.0.1:9087/api/runtimes-inventory-service/v1/instance/\\?jvmInstanceId=$JVM_INSTANCE_ID -H "x-rh-identity:%s"
 
         curl -X GET http://127.0.0.1:9087/api/runtimes-inventory-service/v1/instances/\\?hostname=fedora -H "x-rh-identity:%s"
-      
+
       This test function is stuck in an infinite loop. When finished testing, interrupt this application.
       """
             .formatted(
@@ -72,6 +72,6 @@ public class DevelopmentRestServiceTest {
                 identityHeader.getValue(),
                 identityHeader.getValue());
     System.out.println(text);
-    for (;;) {}
+    for (; ; ) {}
   }
 }
