@@ -42,11 +42,19 @@ pipeline {
         }
 
         stage('Run Tests') {
-            parallel {
+            // parallel {
                 stage('Run unit tests') {
                     steps {
                         withVault([configuration: configuration, vaultSecrets: secrets]) {
-                            sh 'bash -x scripts/unit_test.sh'
+                            sh 'bash -x test-scripts/unit_test.sh'
+                        }
+                    }
+                }
+
+                stage('Run integration tests') {
+                    steps {
+                        withVault([configuration: configuration, vaultSecrets: secrets]) {
+                            sh 'bash -x test-scripts/integration_test.sh'
                         }
                     }
                 }
@@ -65,7 +73,7 @@ pipeline {
 
                 //     }
                 // }
-            }
+            // }
         }
     }
 
